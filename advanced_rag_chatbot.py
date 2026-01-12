@@ -20,221 +20,216 @@ Original file is located at
 import os
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
 
-# Commented out IPython magic to ensure Python compatibility.
-# %%writefile loader.py
-# from langchain_community.document_loaders import PyPDFLoader
-# 
-# def load_pdf(path):
-#     loader = PyPDFLoader(path)
-#     docs = loader.load()
-# 
-#     for d in docs:
-#         d.metadata["source"] = path
-#         d.metadata["page"] = d.metadata.get("page", 0)
-# 
-#     return docs   # ⬅️ return full Document objects
-# 
-#
+
+%%writefile loader.py
+from langchain_community.document_loaders import PyPDFLoader
+ 
+ def load_pdf(path):
+     loader = PyPDFLoader(path)
+     docs = loader.load()
+
+     for d in docs:
+         d.metadata["source"] = path
+         d.metadata["page"] = d.metadata.get("page", 0)
+ 
+     return docs   # ⬅️ return full Document objects
+
 
 # Commented out IPython magic to ensure Python compatibility.
-# %%writefile state.py
-# from typing import List
-# from typing_extensions import TypedDict
-# 
-# class ChatState(TypedDict):
-#     question: str
-#     context: List[str]
-#     answer: str
-#     history: List[str]
-#
+ %%writefile state.py
+ from typing import List
+ from typing_extensions import TypedDict
+ 
+ class ChatState(TypedDict):
+     question: str
+    context: List[str]
+     answer: str
+     history: List[str]
+
 
 # Commented out IPython magic to ensure Python compatibility.
-# %%writefile ingest.py
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-# from langchain_community.vectorstores import FAISS
-# from langchain_huggingface import HuggingFaceEmbeddings
-# 
-# embeddings = HuggingFaceEmbeddings(
-#     model_name="sentence-transformers/all-MiniLM-L6-v2"
-# )
-# 
-# def ingest_docs(docs):
-#     splitter = RecursiveCharacterTextSplitter(
-#         chunk_size=500,
-#         chunk_overlap=50
-#     )
-# 
-#     split_docs = splitter.split_documents(docs)
-#     vector_db = FAISS.from_documents(split_docs, embeddings)
-#     return vector_db
-# 
-# 
-#
+ %%writefile ingest.py
+ from langchain_text_splitters import RecursiveCharacterTextSplitter
+ from langchain_community.vectorstores import FAISS
+ from langchain_huggingface import HuggingFaceEmbeddings
+ 
+ embeddings = HuggingFaceEmbeddings(
+     model_name="sentence-transformers/all-MiniLM-L6-v2"
+ )
+ 
+ def ingest_docs(docs):
+     splitter = RecursiveCharacterTextSplitter(
+         chunk_size=500,
+         chunk_overlap=50
+     )
+ 
+     split_docs = splitter.split_documents(docs)
+     vector_db = FAISS.from_documents(split_docs, embeddings)
+     return vector_db
+ 
+ 
+
 
 # Commented out IPython magic to ensure Python compatibility.
-# %%writefile retriever.py
-# def get_retriever(vector_db):
-#     return vector_db.as_retriever(search_kwargs={"k": 3})
-#
+ %%writefile retriever.py
+ def get_retriever(vector_db):
+     return vector_db.as_retriever(search_kwargs={"k": 3})
+
 
 # Commented out IPython magic to ensure Python compatibility.
-# %%writefile nodes.py
-# from transformers import pipeline
-# 
-# # Local text2text model (stable)
-# generator = pipeline(
-#     "text2text-generation",
-#     model="google/flan-t5-small"
-# )
-# 
-# def rewrite_node(state):
-#     prompt = f"""
-# Rewrite the following question into a clear,
-# complete question that can be answered from documents.
-# 
-# Question: {state['question']}
-# """
-# 
-#     result = generator(prompt, max_new_tokens=64)
-#     return {"question": result[0]["generated_text"].strip()}
-# 
-# 
-# 
-# def retrieve_node(state, retriever):
-#     docs = retriever.invoke(
-#         state["question"],
-#         filter={
-#             "source": {
-#                 "$in": [
-#                     "/content/2507.18910v1.pdf",
-#                     "/content/IJNRD2506195.pdf"
-#                 ]
-#             }
-#         }
-#       )
-# 
-#     # keep best chunks only
-#     docs = sorted(docs, key=lambda d: len(d.page_content), reverse=True)
-#     docs = docs[:3]
-# 
-#     cleaned_context = []
-#     for d in docs:
-#         text = d.page_content.replace("\n", " ").strip()
-#         cleaned_context.append(text)
-# 
-#     return {
-#         "context": cleaned_context,
-#         "sources": [
-#             f"{d.metadata.get('source')} (page {d.metadata.get('page')})"
-#             for d in docs
-#         ]
-#     }
-# 
-# 
-# def generate_node(state):
-#     prompt = f"""
-# You are a technical assistant.
-# 
-# Use ONLY the given context to answer.
-# Do NOT add external knowledge.
-# 
-# Your answer must:
-# 1. Start with a clear definition
-# 2. Add 1–2 lines of explanation
-# 3. Be concise and factual
-# 
-# Context:
-# {" ".join(state["context"])}
-# 
-# Question:
-# {state["question"]}
-# """
-#     result = generator(prompt, max_new_tokens=180)
-#     return {"answer": result[0]["generated_text"].strip()}
-# 
-# 
-# def memory_node(state):
-#     history = state.get("history", [])
-#     history.append({
-#         "question": state["question"],
-#         "answer": state["answer"]
-#     })
-#     return {"history": history}
-# 
-# 
-#
+ %%writefile nodes.py
+ from transformers import pipeline
+ 
+ Local text2text model (stable)
+ generator = pipeline(
+     "text2text-generation",
+     model="google/flan-t5-small"
+ )
+ 
+ def rewrite_node(state):
+     prompt = f"""
+ Rewrite the following question into a clear,
+ complete question that can be answered from documents.
+ 
+ Question: {state['question']}
+ """
+ 
+     result = generator(prompt, max_new_tokens=64)
+     return {"question": result[0]["generated_text"].strip()}
+ 
+ 
+ 
+ def retrieve_node(state, retriever):
+     docs = retriever.invoke(
+         state["question"],
+         filter={
+             "source": {
+                 "$in": [
+                     "/content/2507.18910v1.pdf",
+                     "/content/IJNRD2506195.pdf"
+                 ]
+             }
+         }
+       )
+ 
+     # keep best chunks only
+     docs = sorted(docs, key=lambda d: len(d.page_content), reverse=True)
+     docs = docs[:3]
+ 
+     cleaned_context = []
+     for d in docs:
+         text = d.page_content.replace("\n", " ").strip()
+         cleaned_context.append(text)
+ 
+     return {
+         "context": cleaned_context,
+         "sources": [
+             f"{d.metadata.get('source')} (page {d.metadata.get('page')})"
+             for d in docs
+         ]
+     }
+ 
+ 
+ def generate_node(state):
+     prompt = f"""
+ You are a technical assistant.
+ 
+ Use ONLY the given context to answer.
+ Do NOT add external knowledge.
+ 
+ Your answer must:
+ 1. Start with a clear definition
+ 2. Add 1–2 lines of explanation
+ 3. Be concise and factual
+ 
+ Context:
+ {" ".join(state["context"])}
+ 
+ Question:
+ {state["question"]}
+ """
+     result = generator(prompt, max_new_tokens=180)
+     return {"answer": result[0]["generated_text"].strip()}
+ 
+ 
+ def memory_node(state):
+     history = state.get("history", [])
+     history.append({
+         "question": state["question"],
+         "answer": state["answer"]
+     })
+     return {"history": history}
+ 
+ 
 
 # Commented out IPython magic to ensure Python compatibility.
-# %%writefile graph.py
-# from langgraph.graph import StateGraph
-# from state import ChatState
-# from nodes import retrieve_node, generate_node, memory_node, rewrite_node
-# 
-# def build_graph(retriever):
-#     graph = StateGraph(ChatState)
-# 
-#     graph.add_node("rewrite", rewrite_node)
-#     graph.add_node("retrieve", lambda s: retrieve_node(s, retriever))
-#     graph.add_node("generate", generate_node)
-#     graph.add_node("memory", memory_node)
-# 
-#     graph.set_entry_point("rewrite")
-# 
-#     graph.add_edge("rewrite", "retrieve")
-#     graph.add_edge("retrieve", "generate")
-#     graph.add_edge("generate", "memory")
-# 
-#     return graph.compile()
-# 
-#
-
-# Commented out IPython magic to ensure Python compatibility.
-# %%writefile main.py
-# import os
-# import warnings
-# import logging
-# 
-# # Disable GPU usage
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# 
-# # Silence TensorFlow logs
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-# 
-# # Silence HuggingFace + Transformers
-# os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-# 
-# # Disable warnings
-# warnings.filterwarnings("ignore")
-# 
-# # Silence logging
-# logging.getLogger().setLevel(logging.ERROR)
-# 
-# 
-# from loader import load_pdf
-# from ingest import ingest_docs
-# from retriever import get_retriever
-# from graph import build_graph
-# 
-# 
-# docs = []
-# docs.extend(load_pdf("/content/2507.18910v1.pdf"))
-# docs.extend(load_pdf("/content/IJNRD2506195.pdf"))
-# 
-# 
-# vector_db = ingest_docs(docs)
-# retriever = get_retriever(vector_db)
-# chatbot = build_graph(retriever)
-# 
-# state = {
-#     "question": "What is Retrieval-Augmented Generation in LLMs?",
-#     "context": [],
-#     "answer": "",
-#     "history": []
-# }
-# 
-# result = chatbot.invoke(state)
-# print("Answer:", result["answer"])
-# print("History:", result["history"])
-#
+ %%writefile graph.py
+ from langgraph.graph import StateGraph
+ from state import ChatState
+ from nodes import retrieve_node, generate_node, memory_node, rewrite_node
+ 
+ def build_graph(retriever):
+     graph = StateGraph(ChatState)
+ 
+     graph.add_node("rewrite", rewrite_node)
+     graph.add_node("retrieve", lambda s: retrieve_node(s, retriever))
+     graph.add_node("generate", generate_node)
+     graph.add_node("memory", memory_node)
+ 
+     graph.set_entry_point("rewrite")
+ 
+     graph.add_edge("rewrite", "retrieve")
+     graph.add_edge("retrieve", "generate")
+     graph.add_edge("generate", "memory")
+ 
+     return graph.compile()
+ 
+# commented out IPython magic to ensure Python compatibility.
+ %%writefile main.py
+ import os
+ import warnings
+ import logging
+ 
+ # Disable GPU usage
+ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+ 
+ # Silence TensorFlow logs
+ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+ 
+ # Silence HuggingFace + Transformers
+ os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+ 
+ # Disable warnings
+ warnings.filterwarnings("ignore")
+ 
+ # Silence logging
+ logging.getLogger().setLevel(logging.ERROR)
+ 
+ 
+ from loader import load_pdf
+ from ingest import ingest_docs
+ from retriever import get_retriever
+ from graph import build_graph
+ 
+ 
+ docs = []
+ docs.extend(load_pdf("/content/2507.18910v1.pdf"))
+ docs.extend(load_pdf("/content/IJNRD2506195.pdf"))
+ 
+ 
+ vector_db = ingest_docs(docs)
+ retriever = get_retriever(vector_db)
+ chatbot = build_graph(retriever)
+ 
+ state = {
+     "question": "What is Retrieval-Augmented Generation in LLMs?",
+     "context": [],
+     "answer": "",
+     "history": []
+ }
+ 
+ result = chatbot.invoke(state)
+ print("Answer:", result["answer"])
+ print("History:", result["history"])
 
 !python main.py
