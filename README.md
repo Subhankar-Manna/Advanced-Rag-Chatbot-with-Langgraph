@@ -33,5 +33,5 @@ Here are **use cases of an Advanced RAG Chatbot with LangGraph**, listed **point
 7. Healthcare Information Assistant (non-diagnostic)
 8. Technical Support Chatbots
 9. HR & Policy Query Assistant
-10.Financial Report Analysis Assistant
+10. Financial Report Analysis Assistant
 
