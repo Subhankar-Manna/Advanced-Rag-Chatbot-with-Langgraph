@@ -29,6 +29,8 @@ advanced-rag-langgraph/
 └── data/
     └── sample_pdfs/
 
+
+
 ## Required Skills: 
 Here are the required skills for an Advanced RAG Chatbot using LangGraph, listed clearly in point format:
 
