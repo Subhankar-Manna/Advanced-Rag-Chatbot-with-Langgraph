@@ -30,7 +30,9 @@ advanced-rag-langgraph/
 
 
 
+
 ## Required Skills: 
+```text
 Here are the required skills for an Advanced RAG Chatbot using LangGraph, listed clearly in point format:
 
 1. Generative AI (GenAI)
