@@ -1,6 +1,33 @@
 ## Advanced Rag Chatbot with Langgraph
 An **Advanced RAG Chatbot using LangGraph** combines retrieval and generation to deliver accurate, context-aware responses. It retrieves relevant information from custom documents using embeddings and semantic search, then generates answers grounded in that context using an LLM. LangGraph enables a **graph-based workflow** with nodes for query processing, retrieval, generation, and validation, allowing better control, scalability, and state management. This approach reduces hallucinations, improves answer reliability, and supports complex conversational logic compared to traditional linear RAG pipelines.
 
+## Project Structure:
+ advanced-rag-langgraph/
+│
+├── README.md
+├── requirements.txt
+├── .gitignore
+│
+├── app/
+│   ├── __init__.py
+│   ├── config.py
+│   │
+│   ├── state.py
+│   ├── graph.py
+│   │
+│   ├── loaders/
+│   │   ├── __init__.py
+│   │   └── pdf_loader.py
+│   │
+│   ├── ingest.py
+│   ├── retriever.py
+│   ├── nodes.py
+│   └── main.py
+│
+└── data/
+    └── sample_pdfs/
+
+
 ## Required Skills: 
 Here are the required skills for an Advanced RAG Chatbot using LangGraph, listed clearly in point format:
 
