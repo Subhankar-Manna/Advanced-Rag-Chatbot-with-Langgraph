@@ -18,7 +18,7 @@ Original file is located at
 !pip install pypdf
 
 import os
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = "YOUR_OPEN_KEY"
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = "YOUR_API_KEY"
 
 
 %%writefile loader.py
